@@ -30,7 +30,7 @@ RUN composer install --no-dev --optimize-autoloader
 RUN mkdir -p /var/www/html/public/avatars /var/www/html/public/media && \
     chown -R www-data:www-data /var/www/html/public/avatars /var/www/html/public/media && \
     chmod -R 775 /var/www/html/public/avatars /var/www/html/public/media
-
+RUN php artisan storage:link
 # 7. Laravel Storage နှင့် Cache အတွက် Permission ပေးခြင်း
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && \
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
