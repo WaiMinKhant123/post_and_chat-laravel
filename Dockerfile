@@ -25,8 +25,18 @@ COPY . /var/www/html
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader
 
-# 6. Set permissions for Laravel
+COPY . /var/www/html
+WORKDIR /var/www/html
+
+# folder အသစ်ဆောက်ပြီး permission ပေးခြင်း
+RUN mkdir -p /var/www/html/public/avatars && \
+    chown -R www-data:www-data /var/www/html/public/avatars && \
+    chmod -R 775 /var/www/html/public/avatars
+
+# Laravel permission အဟောင်းများ
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# ... ကျန်တဲ့ code များ ...
 
 # 7. Change Apache document root to Laravel's public folder
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
