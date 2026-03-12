@@ -11,7 +11,9 @@ use App\Http\Controllers\FriendController;
 
 // Authentication Routes
 Auth::routes();
-
+Route::get('/', function () {
+    return redirect()->route('home');
+});
 // Home Route
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::middleware(['auth', 'check.banned'])->group(function () {
