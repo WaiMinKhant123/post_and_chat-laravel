@@ -8,62 +8,68 @@ use Faker\Factory as Faker;
 
 class PostSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
         $faker = Faker::create();
-        $totalPosts = 10000; // လိုချင်သည့် Mock Data ပမာဏ (၁၀,၀၀၀)
-        $batchSize = 500;   // တစ်ကြိမ်တည်းနဲ့ DB ထဲ Batch ထည့်မည့် ပမာဏ
+        $totalPosts = 10000; 
+        $batchSize = 500;   
 
         $this->command->info("Starting to seed {$totalPosts} posts and media...");
 
+        // ဇယားဟောင်းရှိခဲ့ရင် Data ရှင်းရန် (သို့မဟုတ် migrate:fresh သုံးနေရင် ပြီးသားဖြစ်ပါတယ်)
+        // DB::table('media')->delete();
+        // DB::table('posts')->delete();
+
         for ($i = 0; $i < $totalPosts; $i += $batchSize) {
-            DB::transaction(function () use ($faker, $batchSize) {
-                $postsData = [];
+            $postsData = [];
+            $now = now();
+
+            // 1. Posts များကို Batch တည်ဆောက်ခြင်း
+            for ($j = 0; $j < $batchSize; $j++) {
+                $postsData[] = [
+                    'category_id' => rand(1, 5),
+                    'title'       => $faker->sentence(3),
+                    'body'        => $faker->paragraph(2),
+                    'user_id'     => rand(1, 10) == 1 ? 17 : 3,
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ];
+            }
+
+            // Posts များကို Bulk Insert လုပ်ပြီး ထွက်လာမည့် IDs များကို ရယူရန်
+            // PostgreSQL မှာ returning id ကို သုံးနိုင်ပါသည်
+            $insertedPostIds = [];
+            
+            // Chunk လိုက် ထည့်ပြီး ID များကို Database ထეကနေ ပြန်ဆွဲထုတ်ခြင်း
+            foreach ($postsData as $post) {
+                $postId = DB::table('posts')->insertGetId($post);
+                
+                // 2. Media Data များ ချက်ချင်း ချိတ်ဆက်ရန်
+                $mediaCount = rand(1, 2);
                 $mediaData = [];
-
-                for ($j = 0; $j < $batchSize; $j++) {
-                    $now = now();
+                for ($m = 0; $m < $mediaCount; $m++) {
+                    $isVideo = (rand(1, 15) === 1);
                     
-                    // 1. Post Data ဖွဲ့စည်းပုံ
-                    $postId = DB::table('posts')->insertGetId([
-                        'category_id' => rand(1, 5), // categories ID 1 မှ 5 အတွင်း (Happy, Sad, Angry, Love, Beautiful)
-                        'title'       => $faker->sentence(3),
-                        'body'        => $faker->paragraph(2),
-                        'user_id'     => rand(1, 10) == 1 ? 17 : 3, // သင့် Database ထဲက User ID တွေအတိုင်း (3 သို့မဟုတ် 17)
-                        'created_at'  => $now,
-                        'updated_at'  => $now,
-                    ]);
-
-                    // 2. Media Data ဖွဲ့စည်းပုံ (Post တစ်ခုချင်းစီအတွက် ပုံ သို့မဟုတ် ဗီဒီယို ထည့်ရန်)
-                    $mediaCount = rand(1, 2); // Post တစ်ခုမှာ ပုံ ၁ ခု သို့မဟုတ် ၂ ခု ပါဝင်မည်
-                    for ($m = 0; $m < $mediaCount; $m++) {
-                        $isVideo = (rand(1, 15) === 1); // တစ်ခါတလေ ဗီဒီယိုဖြစ်မည် (ရခိုင်နှုန်းနည်းနည်း)
-                        
-                        $mediaData[] = [
-                            'file_path'  => $isVideo 
-                                ? 'https://res.cloudinary.com/nuorpfl9/video/upload/v1790433241/videos/sample.mp4' 
-                                : 'https://picsum.photos/seed/' . rand(1, 50000) . '/600/400', // Unsplash/Picsum ပုံအလန်းစားများ
-                            'file_type'  => $isVideo ? 'video' : 'photo',
-                            'post_id'    => $postId,
-                            'user_id'    => 3,
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ];
-                    }
+                    $mediaData[] = [
+                        'file_path'  => $isVideo 
+                            ? 'https://res.cloudinary.com/nuorpfl9/video/upload/v1790433241/videos/sample.mp4' 
+                            : 'https://picsum.photos/seed/' . rand(1, 50000) . '/600/400',
+                        'file_type'  => $isVideo ? 'video' : 'photo',
+                        'post_id'    => $postId,
+                        'user_id'    => 3,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
-
-                // Media များကို Bulk ဖြင့် တစ်ခါတည်း သိမ်းမည်
+                
+                // Media ကို Bulk Insert လုပ်မည်
                 if (!empty($mediaData)) {
                     DB::table('media')->insert($mediaData);
                 }
-            });
+            }
 
-            $this->command->info("Processed " . ($i + $batchSize) . " / {$totalPosts} records...");
+            $currentProcessed = min($i + $batchSize, $totalPosts);
+            $this->command->info("Processed {$currentProcessed} / {$totalPosts} records...");
         }
 
         $this->command->info("Mock data seeding completed successfully!");

@@ -12,39 +12,45 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class PostController extends Controller
 {   
-  public function __construct()
-  {
-      $this->middleware('auth')->except(['index', 'readmore']);
-  }
+    public function __construct()
+    {
+        $this->middleware('auth')->except(['index', 'readmore']);
+    }
 
-  public function index(Request $request)
-  {
-      $user = Auth::user();
-      $following = $request->routeIs('post.following');
-      $search = $request->input('search');
-      $blockedUserIds = $user->blockedUsers()->pluck('blocked_user_id')->toArray();
-      if ($following) {
-          $followingIds = $user->following->pluck('id');
-          if ($followingIds->isNotEmpty()) {
-              $data = Post::whereIn('user_id', $followingIds)
-                          ->whereNotIn('user_id', $blockedUserIds);
-          } else {
-              $data = collect();
-          }
-      } else {
-          $data = Post::whereNotIn('user_id', $blockedUserIds);
-      }
-      if ($search) {
-          $data->where('title', 'LIKE', '%' . $search . '%');
-      }
-  
-      $data = $data->with(['media', 'user', 'category'])->orderBy('id', 'DESC')->paginate(8);
-      return view('post.index', ['post' => $data]);
-  }
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+        $following = $request->routeIs('post.following');
+        $search = $request->input('search');
+
+        // Blocked user IDs များကို တစ်ခါတည်း Array အဖြစ် ယူရန်
+        $blockedUserIds = $user ? $user->blockedUsers()->pluck('blocked_user_id')->toArray() : [];
+
+        $query = Post::with(['media', 'user', 'category'])
+                     ->whereNotIn('user_id', $blockedUserIds);
+
+        if ($following && $user) {
+            $followingIds = $user->following()->pluck('users.id');
+            if ($followingIds->isNotEmpty()) {
+                $query->whereIn('user_id', $followingIds);
+            } else {
+                $query->whereRaw('1 = 0'); // Follow လုပ်ထားသူ မရှိပါက ဘာမှ မပြရန်
+            }
+        }
+
+        if ($search) {
+            $query->where('title', 'LIKE', '%' . $search . '%');
+        }
+
+        $data = $query->orderBy('id', 'DESC')->paginate(8);
+
+        return view('post.index', ['post' => $data]);
+    }
 
     public function readmore($id)
     {
-        $data = Post::find($id);
+        // View ဘက်မှာ Media နဲ့ User တွေပါ တစ်ခါတည်း ဝင်လာစေရန် with သုံးပေးခြင်း
+        $data = Post::with(['media', 'user', 'category'])->findOrFail($id);
         return view('post.readmore', ['post' => $data]);
     }
 
@@ -66,7 +72,7 @@ class PostController extends Controller
             'title' => 'required|string|max:255',
             'body' => 'required|string',
             'category_id' => 'required|integer|exists:categories,id',
-            'media_files.*' => 'mimes:jpg,jpeg,png,gif,mp4,avi|max:2048000', // Validation for files
+            'media_files.*' => 'mimes:jpg,jpeg,png,gif,mp4,avi|max:2048000',
         ]);
 
         $userId = Auth::id();
@@ -75,27 +81,37 @@ class PostController extends Controller
         }
         
         $post = Post::create([
-            'user_id' => $userId, // Auth user_id ကို သုံးရန်
+            'user_id' => $userId,
             'title' => $request->input('title'),
             'body' => $request->input('body'),
             'category_id' => $request->input('category_id'),
         ]);
 
         if ($request->hasFile('media_files')) {
+            $mediaBatch = [];
+            $now = now();
+
             foreach ($request->file('media_files') as $file) {
                 $fileType = $file->getClientMimeType();
                 $isVideo = strpos($fileType, 'video') !== false;
 
-               $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
-    'folder' => 'media',
-    'resource_type' => $isVideo ? 'video' : 'image'
-])->getSecurePath();
-                Media::create([
+                $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
+                    'folder' => 'media',
+                    'resource_type' => $isVideo ? 'video' : 'image'
+                ])->getSecurePath();
+
+                $mediaBatch[] = [
                     'file_path' => $uploadedFileUrl, 
                     'file_type' => $isVideo ? 'video' : 'photo',
                     'post_id' => $post->id,
                     'user_id' => $userId,
-                ]);
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($mediaBatch)) {
+                Media::insert($mediaBatch);
             }
         }
     
@@ -104,12 +120,12 @@ class PostController extends Controller
     
     public function delete($id)
     { 
-        $post = Post::find($id);
-        if( Gate::allows('post-delete', $post) ) {
+        $post = Post::findOrFail($id);
+        if (Gate::allows('post-delete', $post)) {
             $post->delete();
             return redirect('/post')->with('info', 'Your post deleted');
         } else {
-            return back()->with('error', 'Unauthorize');
+            return back()->with('error', 'Unauthorized');
         }
     } 
 
@@ -117,7 +133,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
 
-        if( Gate::allows('post-delete', $post) ) {
+        if (Gate::allows('post-delete', $post)) {
             $categories = [
                 ["id" => 1, "name" => "News"],
                 ["id" => 2, "name" => "Tech"],
@@ -125,7 +141,7 @@ class PostController extends Controller
 
             return view('post.edit', ['post' => $post, 'categories' => $categories]);
         } else {
-            return back()->with('error', 'Unauthorize');
+            return back()->with('error', 'Unauthorized');
         }
     }
 
@@ -146,23 +162,32 @@ class PostController extends Controller
             'category_id' => $request->input('category_id'),
         ]);
 
-        // Update လုပ်တဲ့နေရာမှာလည်း Cloudinary သို့ တင်ရန် ပြင်ဆင်ထားသည်
         if ($request->hasFile('media_files')) {
+            $mediaBatch = [];
+            $now = now();
+            $userId = Auth::id();
+
             foreach ($request->file('media_files') as $file) {
                 $fileType = $file->getClientMimeType();
                 $isVideo = strpos($fileType, 'video') !== false;
 
-             $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
-    'folder' => 'media',
-    'resource_type' => $isVideo ? 'video' : 'image'
-])->getSecurePath();
+                $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
+                    'folder' => 'media',
+                    'resource_type' => $isVideo ? 'video' : 'image'
+                ])->getSecurePath();
 
-                Media::create([
+                $mediaBatch[] = [
                     'file_path' => $uploadedFileUrl, 
                     'file_type' => $isVideo ? 'video' : 'photo',
                     'post_id' => $post->id,
-                    'user_id' => Auth::id(),
-                ]);
+                    'user_id' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($mediaBatch)) {
+                Media::insert($mediaBatch);
             }
         }
 
@@ -171,7 +196,10 @@ class PostController extends Controller
 
     public function profile($id)
     {
-        $user = User::withCount('posts')->with('posts')->find($id);
+        // N+1 မဖြစ်စေရန် user ၏ posts များနှင့်အတူ media များကိုပါ တစ်ခါတည်း load လုပ်ခြင်း
+        $user = User::withCount('posts')
+                    ->with(['posts.media', 'posts.category', 'posts.user'])
+                    ->find($id);
 
         if (!$user) {
             abort(404, 'User not found');
@@ -192,7 +220,7 @@ class PostController extends Controller
 
     public function view(Request $request)
     {
-        $query = Post::with('media')->orderBy('id', 'DESC');
+        $query = Post::with(['media', 'user', 'category'])->orderBy('id', 'DESC');
         if ($search = $request->input('search')) {
             $query->where('title', 'like', '%' . $search . '%');
         }
@@ -202,25 +230,21 @@ class PostController extends Controller
 
     public function deleteAdmin($id)
     {
-        $post = Post::find($id);
+        $post = Post::findOrFail($id);
         $post->delete();
         return redirect('/admin/view')->with('info', 'Your post deleted');
     }
-  
-   public function showUser(Request $request)
-{
-    // posts နဲ့ followers အရေအတွက်ကို withCount နဲ့ တစ်ခါတည်း ဆွဲထုတ်ပါ
-    $query = User::withCount(['posts', 'followers']);
+ 
+    public function showUser(Request $request)
+    {
+        $query = User::withCount(['posts', 'followers']);
 
-    // Search query ရှိမရှိ စစ်ဆေးခြင်း
-    if ($search = $request->input('search')) {
-        $query->where('name', 'like', '%' . $search . '%');
+        if ($search = $request->input('search')) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $users = $query->paginate(10)->appends($request->query());
+
+        return view('admin.user', ['users' => $users]);
     }
-
-    // Pagination (တစ်မျက်နှာကို ၁၀ ယောက်ပြမည်) พร้อมกับ search query ဆက်ပါသွားစေရန် appends သုံးနိုင်သည်
-    $users = $query->paginate(10)->appends($request->query());
-
-    // Loop ပတ်ပြီး query ထပ်ခေါ်စရာ မလိုတော့ပါ (N+1 Problem ရှင်းပြီး)
-
-    return view('admin.user', ['users' => $users]);
-} }
+}

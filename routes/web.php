@@ -12,7 +12,7 @@ use App\Http\Controllers\FriendController;
 // Authentication Routes
 Auth::routes();
 Route::get('/', function () {
-    return redirect()->route('home');
+    return redirect()->route('post.index');
 });
 // Home Route
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
