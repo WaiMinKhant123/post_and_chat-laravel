@@ -58,11 +58,11 @@
                 @if($posts->media->isNotEmpty())
                   @if(strpos($posts->media->first()->file_type, 'video') !== false)
                     <video width="100%" height="400px" controls>
-                      <source src="{{ asset('storage/' . $posts->media->first()->file_path) }}" type="video/mp4">
+                      <source src="{{ $posts->media->first()->file_path }}" type="video/mp4">
                       Your browser does not support the video tag.
                     </video>
                   @else
-                    <img class="img-fluid bsb-scale bsb-hover-scale-up" loading="lazy" src="{{ asset('storage/' . $posts->media->first()->file_path) }}" alt="{{ asset('storage/' . $posts->media->first()->file_path) }}" style="width: 100%; height: 400px;">
+                    <img class="img-fluid bsb-scale bsb-hover-scale-up" loading="lazy" src="{{ $posts->media->first()->file_path }}" alt="Post Media" style="width: 100%; height: 400px; object-fit: cover;">
                   @endif
                 @else
                   <img class="img-fluid bsb-scale bsb-hover-scale-up" loading="lazy" src="{{ asset('img/download1.jpg') }}" alt="Default Image" width="100%" height="auto">
@@ -91,7 +91,7 @@
             <div class="card-footer border-0 bg-transparent p-0 m-0">
               <ul class="entry-meta list-unstyled d-flex align-items-center m-0">
                 <li>
-                  <img src="{{ $posts->user && $posts->user->avatar ? '/avatars/' . $posts->user->avatar : '/path/to/default/avatar.png' }}" class="rounded-circle" style="width: 50px; height: 50px;">
+                  <img src="{{ $posts->user && $posts->user->avatar ? $posts->user->avatar : '/path/to/default/avatar.png' }}" class="rounded-circle" style="width: 50px; height: 50px;">
                 </li>
                 <li>
                   <a href="{{ url("/profileU/{$posts->user->id}") }}" class="text-decoration-none">
@@ -120,6 +120,9 @@
       @endforeach
     </div>
   </div>
+  <div class="d-flex justify-content-center mt-4">
+    {{ $post->links() }}
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz4fnFO9lbQdNMycK6nEzM6Mx6J7LkLxfkGxLcmSO7e2F0n2f7bRXV58fE" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cj6Gz5b7p3r8x4hz6jchO9LUJ4t6mN9mF8SyjUpvZ5W1ey7hG0eaeQK8x8e6bL84" crossorigin="anonymous"></script>

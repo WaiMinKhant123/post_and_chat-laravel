@@ -9,7 +9,7 @@
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <a href="{{ url("/profileU/$friend->id") }}" class="text-decoration-none" style="color:black;">
-                        <img src="{{ $friend->avatar ? '/avatars/' . $friend->avatar : 'https://via.placeholder.com/150' }}" class="rounded-circle me-2" style="width: 40px; height: 40px;" alt="{{ $friend->avatar }}">
+                        <img src="{{ $friend->avatar ? $friend->avatar : 'https://via.placeholder.com/150' }}" class="rounded-circle me-2" style="width: 40px; height: 40px;" alt="{{ $friend->avatar }}">
                        <b> {{ $friend->name }}</b>
                     </a>
                 </div>

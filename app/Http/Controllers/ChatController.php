@@ -23,7 +23,7 @@ class ChatController extends Controller
         $query->where('name', 'LIKE', '%' . $search . '%');
     }
 
-    $users = $query->get();
+    $users = $query->paginate(15);
     
     return view('chatindex', compact('users'));
 }

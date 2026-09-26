@@ -49,7 +49,7 @@
     <div class="container">
         <div class="profile-card">
             <div class="profile-header">
-                <img src="{{ $user->avatar ? '/avatars/' . $user->avatar : 'https://via.placeholder.com/150' }}" alt="Profile Image" class="profile-image img-fluid" width="150">
+                <img src="{{ $user->avatar ?  $user->avatar : 'https://via.placeholder.com/150' }}" alt="Profile Image" class="profile-image img-fluid" width="150">
                 <h2 class="mt-3">{{ $user->name }}</h2>
             </div>
             <div class="stats d-flex justify-content-around">

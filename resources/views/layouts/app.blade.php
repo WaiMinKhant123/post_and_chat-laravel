@@ -71,7 +71,10 @@
                         @else
                         <li class="nav-item dropdown">
                         <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center" href="{{ url("/profileU/" . Auth::id()) }}" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <img src="/avatars/{{ Auth::user()->avatar }}" class="rounded-circle" style="width: 50px; height: 50px; margin-right: 8px;">
+                        <img src="{{ Auth::user()->avatar ? Auth::user()->avatar : asset('img/default-avatar.png') }}" 
+     class="rounded-circle" 
+     style="width: 50px; height: 50px; margin-right: 8px; object-fit: cover;" 
+     alt="{{ Auth::user()->name }}">
                         <span class="dropdown-name" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ Auth::user()->name }}">
                         {{ Str::limit(Auth::user()->name, 15) }} 
                         </span>

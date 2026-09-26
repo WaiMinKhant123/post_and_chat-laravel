@@ -55,7 +55,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function following(): BelongsToMany
+   public function following(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'follows', 'follower_id', 'followed_id');
     }
@@ -65,9 +65,10 @@ class User extends Authenticatable
         return $this->following()->where('followed_id', $user->id)->exists();
     }
 
-    public function followers()
+    // ဒီနေရာကို BelongsToMany အဖြစ် ပြင်ဆင်ပါ
+    public function followers(): BelongsToMany
     {
-        return $this->hasMany(Follow::class, 'follower_id');
+        return $this->belongsToMany(User::class, 'follows', 'followed_id', 'follower_id');
     }
 
     public function blockedUsers(): HasMany

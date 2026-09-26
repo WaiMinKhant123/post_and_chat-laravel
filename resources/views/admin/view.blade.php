@@ -36,6 +36,9 @@
             </tbody>
         </table>
     </div>
+    <div class="d-flex justify-content-center mt-4">
+    {{ $post->links() }}
+</div>
 </div>
 
 <!-- Bootstrap JS and dependencies -->

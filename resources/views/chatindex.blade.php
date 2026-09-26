@@ -37,7 +37,10 @@
                             <li class="p-2 border-bottom">
                                 <a href="{{ url('/profileU/'.$user->id) }}" class="d-flex justify-content-between text-decoration-none" style="color :black;">
                                     <div class="d-flex flex-row position-relative">
-                                        <img src="{{ $user->avatar ? '/avatars/' . $user->avatar : 'https://via.placeholder.com/150' }}" class="rounded-circle" style="width: 40px; height: 40px;" alt="{{ $user->avatar }}">
+                                        <img src="{{ $user->avatar ? $user->avatar : 'https://via.placeholder.com/150' }}" 
+     class="rounded-circle" 
+     style="width: 40px; height: 40px; object-fit: cover;" 
+     alt="{{ $user->name }}">
                                         &nbsp; &nbsp;
                                         <div class="pt-1">
                                             <p class="fw-bold mb-0"><b>{{ $user->name }}</b></p>
@@ -51,6 +54,9 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="d-flex justify-content-center mt-4">
+        {{ $users->links() }}
     </div>
 </div>
 

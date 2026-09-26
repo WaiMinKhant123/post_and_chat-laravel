@@ -42,7 +42,7 @@
                                     </span>
                                 @enderror
                                 @if(Auth::user()->avatar)
-                                    <img src="{{ asset('avatars/' . Auth::user()->avatar) }}" style="width:80px;margin-top: 10px;">
+                                    <img src="{{ asset( Auth::user()->avatar) }}" style="width:80px;margin-top: 10px;">
                                 @endif
                             </div>
                         </div>
