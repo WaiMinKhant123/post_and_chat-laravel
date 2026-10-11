@@ -33,13 +33,7 @@ RUN php artisan storage:link
 
 COPY opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
-# 7. Laravel Storage Link နှင့် Cache Commands များ ထုတ်ပေးခြင်း
-RUN php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan event:cache
-
-# 8. Laravel Storage နှင့် Cache အတွက် Permission ပေးခြင်း
+# 7. Laravel Storage နှင့် Cache အတွက် Permission ပေးခြင်း
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && \
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
@@ -50,3 +44,8 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.
 
 # 10. Port 80 ကို ဖွင့်ခြင်း
 EXPOSE 80
+
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+CMD ["start.sh"]
