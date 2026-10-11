@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql pdo_pgsql
+    && docker-php-ext-install gd pdo pdo_mysql pdo_pgsql opcache
 
 # 2. Apache mod_rewrite ကို ဖွင့်ခြင်း
 RUN a2enmod rewrite
@@ -29,10 +29,12 @@ RUN composer install --no-dev --optimize-autoloader
 RUN mkdir -p /var/www/html/public/avatars /var/www/html/public/media && \
     chown -R www-data:www-data /var/www/html/public/avatars /var/www/html/public/media && \
     chmod -R 775 /var/www/html/public/avatars /var/www/html/public/media
+RUN php artisan storage:link
+
+COPY opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 # 7. Laravel Storage Link နှင့် Cache Commands များ ထုတ်ပေးခြင်း
-RUN php artisan storage:link && \
-    php artisan config:cache && \
+RUN php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache && \
     php artisan event:cache

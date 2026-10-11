@@ -39,17 +39,16 @@ class ChatController extends Controller
                 $query->where('sender_id', $user->id)
                       ->orWhere('receiver_id', $user->id);
             })
-            ->distinct()
-            ->pluck('sender_id')
-            ->merge(
+            ->select('sender_id as id')
+            ->union(
                 \DB::table('messages')
                     ->where(function ($query) use ($user) {
                         $query->where('sender_id', $user->id)
                               ->orWhere('receiver_id', $user->id);
                     })
-                    ->distinct()
-                    ->pluck('receiver_id')
+                    ->select('receiver_id as id')
             )
+            ->pluck('id')
             ->unique()
             ->toArray();
         $blockedUserIds = $user->blockedUsers()->pluck('blocked_user_id')->toArray();
@@ -62,7 +61,7 @@ class ChatController extends Controller
             $query->where('name', 'LIKE', '%' . $search . '%');
         }
     
-        $users = $query->get();
+        $users = $query->paginate(15);
     
         return view('chat_users', compact('users'));
     }
@@ -77,7 +76,7 @@ class ChatController extends Controller
         })->orWhere(function($query) use ($receiverId) {
             $query->where('sender_id', $receiverId)
                   ->where('receiver_id', Auth::id());
-        })->get();
+        })->orderBy('id', 'ASC')->get();
 
         $receiver = User::find($receiverId);
 

@@ -50,7 +50,7 @@ class PostController extends Controller
     public function readmore($id)
     {
         // View ဘက်မှာ Media နဲ့ User တွေပါ တစ်ခါတည်း ဝင်လာစေရန် with သုံးပေးခြင်း
-        $data = Post::with(['media', 'user', 'category'])->findOrFail($id);
+        $data = Post::with(['media', 'user', 'category', 'comments.user'])->findOrFail($id);
         return view('post.readmore', ['post' => $data]);
     }
 
@@ -198,7 +198,7 @@ class PostController extends Controller
     {
         // N+1 မဖြစ်စေရန် user ၏ posts များနှင့်အတူ media များကိုပါ တစ်ခါတည်း load လုပ်ခြင်း
         $user = User::withCount('posts')
-                    ->with(['posts.media', 'posts.category', 'posts.user'])
+                    ->with(['posts.media', 'posts.category'])
                     ->find($id);
 
         if (!$user) {

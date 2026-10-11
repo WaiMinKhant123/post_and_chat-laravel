@@ -212,7 +212,7 @@ class ProfileController extends Controller
             $query->select('blocked_user_id')
                   ->from('blocks')
                   ->where('user_id', $user->id);
-        })->get();
+        })->paginate(20);
 
         return view('blocked_users', compact('blockedUsers'));
     }

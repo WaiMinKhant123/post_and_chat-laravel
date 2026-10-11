@@ -16,13 +16,13 @@ class PostApiController extends Controller
     {
         $search = $request->input('search');
     
-        $query = Post::with('media')->orderBy('id', 'DESC');
+        $query = Post::with(['media', 'user', 'category'])->orderBy('id', 'DESC');
     
         if ($search) {
             $query->where('title', 'LIKE', '%' . $search . '%');
         }
     
-        return response()->json($query->get());
+        return response()->json($query->paginate(20));
     }
     
     

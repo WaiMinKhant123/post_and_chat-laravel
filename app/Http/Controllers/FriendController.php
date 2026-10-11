@@ -19,7 +19,7 @@ class FriendController extends Controller
             ->pluck('f1.follower_id');
 
         // Retrieve mutual friends
-        $friends = User::whereIn('id', $mutualFriendsIds)->get();
+        $friends = User::whereIn('id', $mutualFriendsIds)->paginate(20);
 
         return view('friends.index', compact('friends'));
     }
