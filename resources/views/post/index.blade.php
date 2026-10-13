@@ -65,7 +65,7 @@
                     <img class="img-fluid bsb-scale bsb-hover-scale-up" loading="lazy" src="{{ $posts->media->first()->file_path }}" alt="Post Media" style="width: 100%; height: 400px; object-fit: cover;">
                   @endif
                 @else
-                  <img class="img-fluid bsb-scale bsb-hover-scale-up" loading="lazy" src="{{ asset('img/download1.jpg') }}" alt="Default Image" width="100%" height="auto">
+                  <img class="img-fluid bsb-scale bsb-hover-scale-up" loading="lazy" src=" https://res.cloudinary.com/nuorpfl9/image/upload/v1790451887/media/eqqrhmyqrootey5coiks.jpg " alt="Default Image" width="100%" height="auto">
                 @endif
               </a>
               <figcaption>
